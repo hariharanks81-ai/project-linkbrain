@@ -102,37 +102,49 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    let deferredPrompt;
+    let deferredPrompt = null;
     const installModal = document.getElementById('installModal');
     const btnConfirmInstall = document.getElementById('btnConfirmInstall');
     const btnNotNow = document.getElementById('btnNotNow');
     
-    // Prevent showing it on every single reload if they said Not Now recently
-    const hasSeenPrompt = sessionStorage.getItem('hasSeenInstallPrompt');
+    // Use localStorage so it doesn't bug them every refresh
+    const hasSeenPrompt = localStorage.getItem('hasSeenInstallPrompt');
 
     window.addEventListener('beforeinstallprompt', (e) => {
-        // Prevent Chrome's automatic mini-infobar
         e.preventDefault();
         deferredPrompt = e;
-        
-        if (installModal && !hasSeenPrompt) {
-            // Show the massive pop-up modal!
-            installModal.classList.remove('hidden');
-            
-            btnConfirmInstall.addEventListener('click', async () => {
-                installModal.classList.add('hidden');
-                sessionStorage.setItem('hasSeenInstallPrompt', 'true');
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                deferredPrompt = null;
-            });
-            
-            btnNotNow.addEventListener('click', () => {
-                installModal.classList.add('hidden');
-                sessionStorage.setItem('hasSeenInstallPrompt', 'true');
-            });
-        }
     });
+
+    // Show the modal after 2.5 seconds regardless of the native event
+    // This ensures iOS users see it and get manual instructions!
+    if (installModal && !hasSeenPrompt) {
+        setTimeout(() => {
+            // Check if already installed (running as standalone app)
+            if (window.matchMedia('(display-mode: standalone)').matches) return;
+            
+            installModal.classList.remove('hidden');
+        }, 2500);
+        
+        btnConfirmInstall.addEventListener('click', async () => {
+            installModal.classList.add('hidden');
+            localStorage.setItem('hasSeenInstallPrompt', 'true');
+            
+            if (deferredPrompt) {
+                // Trigger Android Native Install Prompt
+                deferredPrompt.prompt();
+                await deferredPrompt.userChoice;
+                deferredPrompt = null;
+            } else {
+                // Fallback for iPhone / Custom Browsers
+                alert("To install: Tap your browser's Menu or Share button (⋮ or ↑) and select 'Add to Home Screen'.");
+            }
+        });
+        
+        btnNotNow.addEventListener('click', () => {
+            installModal.classList.add('hidden');
+            localStorage.setItem('hasSeenInstallPrompt', 'true');
+        });
+    }
 
     // Voice Feedback
     const voiceFeedback = document.getElementById('voiceFeedback');
