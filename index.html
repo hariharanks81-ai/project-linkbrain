@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Link Brain</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts for that clean Apple/Google vibe -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splashScreen" class="splash-screen">
+        <img src="LINK-BRAIN%20LOGO.png" alt="Link Brain Logo" class="splash-logo" onerror="this.style.display='none'">
+        <div class="splash-loader"></div>
+        <p style="color: var(--text-secondary); font-weight: bold;">Initializing Link Brain...</p>
+    </div>
+    
+    <!-- Top App Bar -->
+    <header class="app-header">
+        <div class="header-top">
+            <div class="header-title">
+                <img src="LINK-BRAIN%20LOGO.png" alt="Logo" class="header-logo" onerror="this.style.display='none'">
+                <h2>Link Brain</h2>
+            </div>
+            <div class="header-actions">
+                <button id="btnThemeToggle" class="icon-btn" title="Toggle Theme">
+                    <span class="material-icons-round">dark_mode</span>
+                </button>
+                <button id="btnImport" class="icon-btn" title="Import Data (.json)">
+                    <span class="material-icons-round">file_upload</span>
+                </button>
+                <input type="file" id="importFile" accept=".json" style="display:none;">
+                <button id="btnExport" class="icon-btn" title="Export Backup">
+                    <span class="material-icons-round">file_download</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="search-container">
+            <span class="material-icons-round search-icon">search</span>
+            <input type="text" id="searchInput" placeholder="Search links or notes...">
+            <button id="btnVoiceSearch" class="icon-btn mic-btn" title="Voice Search">
+                <span class="material-icons-round">mic</span>
+            </button>
+        </div>
+        <div id="domainChips" class="domain-chips">
+            <!-- Chips injected via JS -->
+        </div>
+    </header>
+
+    <!-- Main Content: List of Links -->
+    <main class="content">
+        <div id="emptyState" class="empty-state hidden">
+            <span class="material-icons-round empty-icon">bookmark_border</span>
+            <h3>No links found</h3>
+            <p>Tap the + button to save your first link.</p>
+        </div>
+        
+        <div id="linksContainer" class="links-grid">
+            <!-- Link cards will be injected here by JS -->
+        </div>
+    </main>
+
+    <!-- Floating Action Button -->
+    <button id="fabAdd" class="fab">
+        <span class="material-icons-round">add</span>
+    </button>
+
+    <!-- Bottom Sheet Modal for Adding Links -->
+    <div id="addModalOverlay" class="modal-overlay hidden">
+        <div class="bottom-sheet">
+            <div class="sheet-header">
+                <h3>Save New Link</h3>
+                <button id="btnCloseModal" class="icon-btn">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+            
+            <form id="addLinkForm" class="sheet-body">
+                <div class="input-group">
+                    <label for="linkUrl">URL</label>
+                    <input type="url" id="linkUrl" placeholder="https://example.com" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="linkNote">Personal Note (Optional)</label>
+                    <div class="textarea-wrapper">
+                        <textarea id="linkNote" rows="3" placeholder="Why are you saving this?"></textarea>
+                        <button type="button" id="btnVoiceNote" class="icon-btn voice-note-btn" title="Dictate Note">
+                            <span class="material-icons-round">mic</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="metadataPreview" class="metadata-preview hidden">
+                    <div class="loader"></div>
+                    <span>Fetching website info...</span>
+                </div>
+
+                <button type="submit" class="btn-primary" id="btnSave">Save Link</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI Status -->
+    <!-- Floating AI Status Pill -->
+    <div id="aiStatus" class="ai-status">Initializing AI Brain...</div>
+
+    <!-- Speech Recognition Feedback UI -->
+    <div id="voiceFeedback" class="voice-feedback hidden">
+        <div class="mic-pulse">
+            <span class="material-icons-round">mic</span>
+        </div>
+        <p id="voiceFeedbackText">Listening...</p>
+    </div>
+
+    <!-- Snackbar for Undo -->
+    <div id="snackbar" class="snackbar">
+        <span id="snackbarText">Item deleted</span>
+        <button id="btnUndo" class="btn-text">UNDO</button>
+    </div>
+
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script type="module" src="app.js?v=4"></script>
+</body>
+</html>
