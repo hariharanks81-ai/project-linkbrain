@@ -718,11 +718,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
     
+    const voiceLangSelect = document.getElementById('voiceLang');
     if (SpeechRecognition) {
         recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = false;
-        recognition.lang = 'en-US';
+        // Language will be set dynamically before starting
     } else {
         if(btnVoiceSearch) btnVoiceSearch.style.display = 'none';
         if(btnVoiceNote) btnVoiceNote.style.display = 'none';
@@ -730,6 +731,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function startListening(onResult, mode) {
         if (!recognition) return alert("Speech recognition not supported in this browser.");
+        
+        // Dynamically set language right before listening
+        recognition.lang = voiceLangSelect ? voiceLangSelect.value : 'en-IN';
         
         recognition.onstart = () => {
             voiceFeedback.classList.remove('hidden');
