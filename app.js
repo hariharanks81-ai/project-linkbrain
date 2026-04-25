@@ -103,26 +103,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     let deferredPrompt;
-    const btnInstallApp = document.getElementById('btnInstallApp');
+    const installModal = document.getElementById('installModal');
+    const btnConfirmInstall = document.getElementById('btnConfirmInstall');
+    const btnNotNow = document.getElementById('btnNotNow');
+    
+    // Prevent showing it on every single reload if they said Not Now recently
+    const hasSeenPrompt = sessionStorage.getItem('hasSeenInstallPrompt');
 
     window.addEventListener('beforeinstallprompt', (e) => {
-        // Prevent the mini-infobar from appearing on mobile
+        // Prevent Chrome's automatic mini-infobar
         e.preventDefault();
-        // Stash the event so it can be triggered later.
         deferredPrompt = e;
-        // Show the install button in the header
-        if (btnInstallApp) {
-            btnInstallApp.style.display = 'flex';
+        
+        if (installModal && !hasSeenPrompt) {
+            // Show the massive pop-up modal!
+            installModal.classList.remove('hidden');
             
-            btnInstallApp.addEventListener('click', async () => {
-                btnInstallApp.style.display = 'none'; // Hide button once clicked
-                deferredPrompt.prompt(); // Show the native browser prompt
-                
+            btnConfirmInstall.addEventListener('click', async () => {
+                installModal.classList.add('hidden');
+                sessionStorage.setItem('hasSeenInstallPrompt', 'true');
+                deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    console.log('User accepted the install prompt');
-                }
                 deferredPrompt = null;
+            });
+            
+            btnNotNow.addEventListener('click', () => {
+                installModal.classList.add('hidden');
+                sessionStorage.setItem('hasSeenInstallPrompt', 'true');
             });
         }
     });

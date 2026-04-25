@@ -19,6 +19,19 @@
         <p style="color: var(--text-secondary); font-weight: bold;">Initializing Link Brain...</p>
     </div>
     
+    <!-- PWA Install Modal Pop-up -->
+    <div id="installModal" class="modal-overlay hidden" style="z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: var(--surface-color); border-radius: 24px; padding: 32px 24px; text-align: center; max-width: 340px; width: 100%; box-shadow: 0 12px 32px rgba(0,0,0,0.2);">
+            <img src="logo-192.png" alt="Logo" style="width: 80px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <h3 style="margin-bottom: 12px; font-size: 22px;">Install Link Brain</h3>
+            <p style="color: var(--text-secondary); font-size: 15px; margin-bottom: 32px; line-height: 1.5;">Install our app for a faster, offline-ready link management experience directly from your home screen.</p>
+            <div style="display: flex; gap: 12px;">
+                <button id="btnNotNow" style="flex: 1; padding: 14px; border: none; background: rgba(0,0,0,0.05); border-radius: 16px; color: var(--text-secondary); font-weight: bold; cursor: pointer; font-size: 15px;">Not Now</button>
+                <button id="btnConfirmInstall" style="flex: 1; padding: 14px; border: none; background: var(--primary-color); border-radius: 16px; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(26,115,232,0.3); font-size: 15px;">Install App</button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Top App Bar -->
     <header class="app-header">
         <div class="header-top">
@@ -27,9 +40,6 @@
                 <h2>Link Brain</h2>
             </div>
             <div class="header-actions">
-                <button id="btnInstallApp" class="icon-btn" title="Install App" style="display: none; background: var(--primary-color); color: white; border-radius: 12px; padding: 0 16px; font-size: 14px; font-weight: bold; align-items: center; justify-content: center; height: 40px; margin-right: 8px;">
-                    Install App
-                </button>
                 <button id="btnThemeToggle" class="icon-btn" title="Toggle Theme">
                     <span class="material-icons-round">dark_mode</span>
                 </button>
