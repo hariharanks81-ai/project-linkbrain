@@ -1,7 +1,7 @@
 {
   "name": "Link Brain",
   "short_name": "Links",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f8f9fa",
   "theme_color": "#1a73e8",
@@ -18,7 +18,7 @@
     }
   ],
   "share_target": {
-    "action": "/index.html",
+    "action": "./index.html",
     "method": "GET",
     "params": {
       "title": "title",
