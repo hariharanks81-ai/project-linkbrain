@@ -95,6 +95,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 1500); // 1.5 second artificial delay for the premium native feel
     });
     
+    // --- PWA Service Worker & Install Logic ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Registration failed: ', err));
+        });
+    }
+
+    let deferredPrompt;
+    const btnInstallApp = document.getElementById('btnInstallApp');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent the mini-infobar from appearing on mobile
+        e.preventDefault();
+        // Stash the event so it can be triggered later.
+        deferredPrompt = e;
+        // Show the install button in the header
+        if (btnInstallApp) {
+            btnInstallApp.style.display = 'flex';
+            
+            btnInstallApp.addEventListener('click', async () => {
+                btnInstallApp.style.display = 'none'; // Hide button once clicked
+                deferredPrompt.prompt(); // Show the native browser prompt
+                
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                }
+                deferredPrompt = null;
+            });
+        }
+    });
+
     // Voice Feedback
     const voiceFeedback = document.getElementById('voiceFeedback');
     const voiceFeedbackText = document.getElementById('voiceFeedbackText');
