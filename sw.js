@@ -5,7 +5,7 @@ const ASSETS_TO_CACHE = [
     './style.css',
     './app.js',
     './manifest.json',
-    './LINK-BRAIN%20LOGO.png'
+    './logo-192.png'
 ];
 
 // Install event: cache core assets
