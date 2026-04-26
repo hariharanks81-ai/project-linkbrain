@@ -683,6 +683,13 @@ mark { background-color: rgba(252, 232, 162, 0.6); color: inherit; border-radius
     }
     .link-card {
         padding: 16px;
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
+    .card-footer {
+        flex-wrap: wrap;
+        gap: 8px;
     }
     .card-title {
         font-size: 18px; /* Slightly bigger for readability */
