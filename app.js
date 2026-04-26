@@ -107,42 +107,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnConfirmInstall = document.getElementById('btnConfirmInstall');
     const btnNotNow = document.getElementById('btnNotNow');
     
-    // Use localStorage so it doesn't bug them every refresh
-    const hasSeenPrompt = localStorage.getItem('hasSeenInstallPrompt');
-
     window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('beforeinstallprompt fired');
         e.preventDefault();
         deferredPrompt = e;
     });
 
-    // Show the modal after 2.5 seconds regardless of the native event
-    // This ensures iOS users see it and get manual instructions!
-    if (installModal && !hasSeenPrompt) {
-        setTimeout(() => {
-            // Check if already installed (running as standalone app)
-            if (window.matchMedia('(display-mode: standalone)').matches) return;
-            
-            installModal.classList.remove('hidden');
-        }, 2500);
+    // Forced Popup after 3 seconds
+    setTimeout(() => {
+        if (window.matchMedia('(display-mode: standalone)').matches) return;
         
+        console.log('Showing install modal');
+        if (installModal) {
+            installModal.classList.remove('hidden');
+            installModal.style.display = 'flex'; // Force visibility
+        }
+    }, 3000);
+    
+    if (btnConfirmInstall) {
         btnConfirmInstall.addEventListener('click', async () => {
             installModal.classList.add('hidden');
-            localStorage.setItem('hasSeenInstallPrompt', 'true');
+            installModal.style.display = 'none';
             
             if (deferredPrompt) {
-                // Trigger Android Native Install Prompt
                 deferredPrompt.prompt();
                 await deferredPrompt.userChoice;
                 deferredPrompt = null;
             } else {
-                // Fallback for iPhone / Custom Browsers
                 alert("To install: Tap your browser's Menu or Share button (⋮ or ↑) and select 'Add to Home Screen'.");
             }
         });
-        
+    }
+    
+    if (btnNotNow) {
         btnNotNow.addEventListener('click', () => {
             installModal.classList.add('hidden');
-            localStorage.setItem('hasSeenInstallPrompt', 'true');
+            installModal.style.display = 'none';
         });
     }
 

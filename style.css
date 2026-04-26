@@ -61,6 +61,12 @@ body {
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
     transition: background-color 0.3s, color 0.3s;
+    overflow-x: hidden;
+    width: 100%;
+}
+html {
+    overflow-x: hidden;
+    width: 100%;
 }
 
 /* Splash Screen */
@@ -115,6 +121,9 @@ body {
     padding: 16px 16px 8px 16px;
     z-index: 10;
     border-bottom: 1px solid rgba(0,0,0,0.05);
+    max-width: 400px;
+    margin: 0 auto;
+    width: 100%;
 }
 [data-theme="dark"] .app-header {
     background: rgba(18, 18, 18, 0.85);
