@@ -253,7 +253,7 @@ body {
 /* Link Cards - Grid Layout */
 .links-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
     padding-bottom: 80px;
 }
@@ -325,6 +325,7 @@ body {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    word-break: break-word;
 }
 
 .card-desc {
