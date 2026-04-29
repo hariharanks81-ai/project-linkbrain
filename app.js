@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    async function renderLinks(filterQuery = '') {
+    async function renderLinks(filterQuery = '', useAi = true) {
         linksContainer.innerHTML = '';
         let displayLinks = [...links];
 
@@ -407,31 +407,52 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (filterQuery) {
-            if (isAiReady && extractor) {
+            const q = filterQuery.toLowerCase();
+            
+            // 1. Instant Keyword Matches
+            let keywordMatches = displayLinks.filter(link => {
+                return (
+                    (link.title && link.title.toLowerCase().includes(q)) ||
+                    (link.url && link.url.toLowerCase().includes(q)) ||
+                    (link.description && link.description.toLowerCase().includes(q)) ||
+                    (link.note && link.note.toLowerCase().includes(q))
+                );
+            });
+
+            if (useAi && isAiReady && extractor && q.length > 2) {
                 aiStatus.style.display = 'block';
                 aiStatus.style.background = '#e8f0fe';
                 aiStatus.style.color = '#1a73e8';
                 aiStatus.textContent = 'Thinking...';
 
-                const queryOut = await extractor(filterQuery, { pooling: 'mean', normalize: true });
-                const queryVector = Array.from(queryOut.data);
+                try {
+                    const queryOut = await extractor(filterQuery, { pooling: 'mean', normalize: true });
+                    const queryVector = Array.from(queryOut.data);
 
-                displayLinks.forEach(link => {
-                    if (link.embedding) link.score = cos_sim(queryVector, link.embedding);
-                    else link.score = 0;
-                });
+                    displayLinks.forEach(link => {
+                        if (link.embedding) link.score = cos_sim(queryVector, link.embedding);
+                        else link.score = 0;
+                    });
 
-                displayLinks = displayLinks.filter(l => l.score > 0.2).sort((a, b) => b.score - a.score);
+                    let semanticMatches = displayLinks.filter(l => l.score > 0.2);
+                    
+                    // Union of results
+                    let combined = [...keywordMatches];
+                    semanticMatches.forEach(semLink => {
+                        if (!combined.some(kLink => kLink.id === semLink.id)) {
+                            combined.push(semLink);
+                        }
+                    });
+                    
+                    displayLinks = combined;
+                } catch(e) {
+                    console.error("AI Search Error:", e);
+                    displayLinks = keywordMatches;
+                }
+                
                 aiStatus.style.display = 'none';
             } else {
-                const q = filterQuery.toLowerCase();
-                displayLinks = displayLinks.filter(link => {
-                    return (
-                        (link.title && link.title.toLowerCase().includes(q)) ||
-                        (link.description && link.description.toLowerCase().includes(q)) ||
-                        (link.note && link.note.toLowerCase().includes(q))
-                    );
-                });
+                displayLinks = keywordMatches;
             }
         } else {
             displayLinks.sort((a, b) => b.timestamp - a.timestamp);
@@ -598,13 +619,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // --- Search with Debounce ---
+    // --- Search with Instant Keyword + Debounced AI ---
     let searchTimeout;
     searchInput.addEventListener('input', (e) => {
+        const query = e.target.value;
+        
+        // 1. Instant Keyword Search
+        renderLinks(query, false); 
+        
+        // 2. Debounced AI Search
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            renderLinks(e.target.value);
-        }, 400);
+        if (query.trim().length > 2 && isAiReady) {
+            searchTimeout = setTimeout(() => {
+                renderLinks(query, true);
+            }, 600);
+        }
     });
 
     // --- Modal Logic ---
