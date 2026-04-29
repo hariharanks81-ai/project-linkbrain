@@ -90,9 +90,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         setTimeout(() => {
             if (splashScreen) {
                 splashScreen.classList.add('hidden');
-                setTimeout(() => splashScreen.remove(), 500); // Cleanup DOM
+                setTimeout(() => splashScreen.remove(), 300); // Cleanup DOM
             }
-        }, 1500); // 1.5 second artificial delay for the premium native feel
+        }, 100); // Speed optimization: Minimal delay
     });
     
     // --- PWA Service Worker & Install Logic ---
@@ -171,44 +171,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             localStorage.removeItem('linkBrain_data');
         }
 
-        // --- Inject 20 New Seed Links from User ---
-        const extraSeeds = [
-            { url: "https://github.com/enescingoz/awesome-n8n-templates", title: "Awesome n8n Templates", description: "Curated list of awesome n8n templates.", note: "Automation workflows" },
-            { url: "https://github.com/ethanplusai/jarvis", title: "Jarvis AI", description: "Personal AI assistant inspired by Iron Man.", note: "Jarvis assistant" },
-            { url: "https://github.com/ethanplusai/govspending", title: "Gov Spending", description: "Track government spending data.", note: "Government spending tracker" },
-            { url: "https://github.com/ethanplusai/manifestapp", title: "Manifest App", description: "Manifestation and goal tracking.", note: "Goal tracking app" },
-            { url: "https://github.com/ethanplusai/samantha-cli", title: "Samantha CLI", description: "CLI AI Assistant.", note: "Samantha AI CLI" },
-            { url: "https://snsct-mba-batch-2024-26.vercel.app/", title: "SNSCT MBA Batch", description: "MBA Batch 2024-26 Website.", note: "College batch website" },
-            { url: "https://lnkd.in/eqisiW-j", title: "LinkedIn Carousel", description: "LinkedIn post or carousel.", note: "LinkedIn Carousel post" },
-            { url: "https://github.com/0xramm/Indian-Stock-Market-API", title: "Indian Stock Market API", description: "API for Indian Stock Market.", note: "Stock market API" },
-            { url: "https://iptv-org.github.io/iptv/index.m3u", title: "IPTV Playlist", description: "Free IPTV M3U playlist.", note: "Live TV M3U playlist" },
-            { url: "https://github.com/MohamedxFawzi?tab=repositories", title: "Mohamed Fawzi GitHub", description: "MohamedxFawzi Repositories.", note: "GitHub profile and repos" },
-            { url: "https://69a4383876b3d9095015a2e3--cozy-cheesecake-b9cd1f.netlify.app/", title: "Cozy Cheesecake App", description: "Netlify deployed application.", note: "Web app preview" },
-            { url: "https://www.notion.so/How-I-created-a-Nike-style-commercial-website-for-free-Step-by-Step-Guide-30c0d2ba3ca0805a9932e5a445014957", title: "Nike Style Website Guide", description: "Notion guide to creating a Nike style site.", note: "Web dev tutorial Notion" },
-            { url: "https://www.mathintlprotfolio.dev/#about", title: "Mathintl Portfolio", description: "Developer portfolio.", note: "Portfolio reference" },
-            { url: "https://github.com/AbdulMoqueet/abdulmoqueet.github.io", title: "Abdul Moqueet Portfolio", description: "GitHub Pages portfolio.", note: "Portfolio reference" },
-            { url: "https://github.com/toukoum/portfolio", title: "Toukoum Portfolio", description: "Portfolio repository.", note: "Portfolio reference" },
-            { url: "https://github.com/codebucks27/Next.js-Creative-Portfolio-Website", title: "Next.js Creative Portfolio", description: "Next.js portfolio template.", note: "NextJS template reference" },
-            { url: "https://www.wallofportfolios.in/portfolios/rushabh-gouda/", title: "Rushabh Gouda Portfolio", description: "Wall of Portfolios entry.", note: "Portfolio reference" },
-            { url: "https://github.com/Lucas98Fernando", title: "Lucas Fernando GitHub", description: "GitHub Profile.", note: "GitHub profile" },
-            { url: "https://youtu.be/NCXYlZ-oAY0", title: "YouTube Video 1", description: "YouTube tutorial or showcase.", note: "YouTube reference" },
-            { url: "https://youtu.be/TWzMV5brRkE", title: "YouTube Video 2", description: "YouTube tutorial or showcase.", note: "YouTube reference" }
-        ];
-
-        for (let i = 0; i < extraSeeds.length; i++) {
-            const seed = extraSeeds[i];
-            if (!links.some(l => l.url === seed.url)) {
-                const newLink = {
-                    id: 'seed_' + Date.now().toString() + i,
-                    url: seed.url,
-                    note: seed.note,
-                    title: seed.title,
-                    description: seed.description,
-                    timestamp: Date.now() - (i * 1000)
-                };
-                await saveLinkToDB(newLink);
-                links.push(newLink);
+        // --- Erase Dummy Data (One-time Cleanup) ---
+        const seedsToDelete = links.filter(l => l.id.startsWith('seed_'));
+        if (seedsToDelete.length > 0) {
+            for (const seed of seedsToDelete) {
+                await deleteLinkFromDB(seed.id);
             }
+            links = links.filter(l => !l.id.startsWith('seed_'));
         }
     } catch (e) {
         console.error("Failed to load IndexedDB", e);
@@ -343,36 +312,54 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // --- AI Engine Initialization ---
+    // --- AI Engine & Auto-Categorization Setup ---
     let extractor = null;
     let isAiReady = false;
-
-    aiStatus.style.display = 'block';
     
+    const categories = [
+        { name: 'Development', query: 'coding programming github developer tech tutorial software open source' },
+        { name: 'Social Media', query: 'social media linkedin youtube twitter instagram facebook' },
+        { name: 'News & Blogs', query: 'news articles blog posts reading current events' },
+        { name: 'Tools & Apps', query: 'tools productivity utility web applications saas software' },
+        { name: 'Education', query: 'education learning courses research study academic' }
+    ];
+    let categoryEmbeddings = [];
+
     setTimeout(async () => {
         try {
             extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+            aiStatus.style.display = 'block';
             aiStatus.style.background = '#e6f4ea';
             aiStatus.style.color = '#137333';
             aiStatus.textContent = 'AI Brain Ready!';
             
-            let updated = false;
-            for (let i = 0; i < links.length; i++) {
-                if (!links[i].embedding) {
-                    aiStatus.textContent = `Analyzing link ${i+1}/${links.length}...`;
-                    const textToEmbed = `${links[i].title || ''} ${links[i].description || ''} ${links[i].note || ''}`;
-                    const out = await extractor(textToEmbed, { pooling: 'mean', normalize: true });
-                    links[i].embedding = Array.from(out.data);
-                    await saveLinkToDB(links[i]);
-                    updated = true;
-                }
+            // Precompute Category Embeddings
+            categoryEmbeddings = [];
+            for (const cat of categories) {
+                const out = await extractor(cat.query, { pooling: 'mean', normalize: true });
+                categoryEmbeddings.push({ name: cat.name, vector: Array.from(out.data) });
             }
-            if (updated) renderChips();
-            
+
+            function classifyLink(embedding) {
+                if (!embedding || categoryEmbeddings.length === 0) return 'Uncategorized';
+                let bestCategory = 'Uncategorized';
+                let highestScore = 0;
+                for (const cat of categoryEmbeddings) {
+                    const score = cos_sim(embedding, cat.vector);
+                    if (score > highestScore && score > 0.15) {
+                        highestScore = score;
+                        bestCategory = cat.name;
+                    }
+                }
+                return bestCategory;
+            }
+
+            window.classifyLink = classifyLink; // Export to global scope for form use
             isAiReady = true;
             setTimeout(() => { aiStatus.style.display = 'none'; }, 2000);
         } catch (e) {
             console.error("AI Model failed to load:", e);
+            aiStatus.style.display = 'block';
             aiStatus.style.background = '#fce8e6';
             aiStatus.style.color = '#c5221f';
             aiStatus.textContent = 'AI Offline. Using normal search.';
@@ -462,6 +449,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const domain = getDomain(link.url);
                 const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
                 
+                // Feature 4: Rich Link Previews
+                const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+                const ytMatch = link.url.match(youtubeRegex);
+                const isImage = /\.(jpeg|jpg|gif|png|webp)($|\?)/i.test(link.url);
+                
+                let previewHtml = '';
+                if (ytMatch) {
+                    const videoId = ytMatch[1];
+                    previewHtml = `
+                        <div class="media-preview yt-preview" onclick="this.innerHTML='<iframe src=\'https://www.youtube.com/embed/${videoId}?autoplay=1\' frameborder=\'0\' allow=\'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\' allowfullscreen></iframe>'">
+                            <img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" alt="YouTube Thumbnail">
+                            <div class="play-overlay"><span class="material-icons-round">play_circle_filled</span></div>
+                        </div>
+                    `;
+                } else if (isImage) {
+                    previewHtml = `
+                        <div class="media-preview">
+                            <img src="${link.url}" alt="Image preview" onerror="this.style.display='none'">
+                        </div>
+                    `;
+                }
+
                 const card = document.createElement('div');
                 card.className = 'link-card';
                 card.style.animationDelay = `${index * 0.05}s`; // Staggered animation
@@ -471,8 +480,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <img src="${faviconUrl}" class="card-favicon" loading="lazy" onerror="this.style.display='none'">
                             <div class="card-title">${highlightText(link.title || domain, filterQuery)}</div>
                         </div>
-                        ${link.score ? `<div class="match-score">${Math.round(link.score * 100)}% Match</div>` : ''}
+                        <div style="display:flex; align-items:center; gap:4px;">
+                            ${link.category && link.category !== 'Uncategorized' ? `<div class="category-badge">${link.category}</div>` : ''}
+                            ${link.score ? `<div class="match-score">${Math.round(link.score * 100)}% Match</div>` : ''}
+                        </div>
                     </div>
+                    ${previewHtml}
                     ${link.description ? `<div class="card-desc">${highlightText(link.description, filterQuery)}</div>` : ''}
                     ${link.note ? `<div class="card-note">${highlightText(link.note, filterQuery)}</div>` : ''}
                     <div class="card-footer">
@@ -633,7 +646,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, "text/html");
             
-            const title = doc.querySelector('title')?.innerText || '';
+            const title = doc.querySelector('title')?.textContent || '';
             const descMeta = doc.querySelector('meta[name="description"]') || doc.querySelector('meta[property="og:description"]');
             const description = descMeta ? descMeta.getAttribute('content') : '';
             
@@ -680,6 +693,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const textToEmbed = `${oldLink.title} ${oldLink.description} ${oldLink.note}`;
                         const out = await extractor(textToEmbed, { pooling: 'mean', normalize: true });
                         oldLink.embedding = Array.from(out.data);
+                        if (window.classifyLink) oldLink.category = window.classifyLink(oldLink.embedding);
                     }
                     await saveLinkToDB(oldLink);
                 }
@@ -700,6 +714,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const textToEmbed = `${newLink.title} ${newLink.description} ${newLink.note}`;
                 const out = await extractor(textToEmbed, { pooling: 'mean', normalize: true });
                 newLink.embedding = Array.from(out.data);
+                if (window.classifyLink) newLink.category = window.classifyLink(newLink.embedding);
+            } else {
+                newLink.category = 'Uncategorized';
             }
 
             await saveLinkToDB(newLink);
@@ -779,6 +796,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         const div = document.createElement('div');
         div.innerText = str;
         return div.innerHTML;
+    }
+
+    // --- About Modal Logic ---
+    const aboutModal = document.getElementById('aboutModal');
+    const headerTitle = document.getElementById('headerTitle');
+    const btnAboutClose = document.getElementById('btnAboutClose');
+    
+    if (headerTitle && aboutModal) {
+        headerTitle.addEventListener('click', () => {
+            aboutModal.classList.remove('hidden');
+            aboutModal.style.display = 'flex';
+        });
+    }
+    
+    if (btnAboutClose && aboutModal) {
+        btnAboutClose.addEventListener('click', () => {
+            aboutModal.classList.add('hidden');
+            aboutModal.style.display = 'none';
+        });
+        aboutModal.addEventListener('click', (e) => {
+            if (e.target === aboutModal) {
+                aboutModal.classList.add('hidden');
+                aboutModal.style.display = 'none';
+            }
+        });
     }
 
     // Initial render
