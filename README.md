@@ -20,7 +20,8 @@ Using Python:
 ```powershell
 python -m http.server 8080
 ```
-Open your browser and navigate to: **[http://localhost:8080](http://localhost:8080)**
+Open your browser and navigate to: [http://localhost:8080]
+
 
 ### PWA Installation
 To install the application on your mobile device or desktop:
